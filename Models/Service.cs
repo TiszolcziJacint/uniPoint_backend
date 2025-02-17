@@ -9,11 +9,10 @@ namespace uniPoint_backend.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int ServiceId { get; set; }
 
+        [ForeignKey("UserId")]
+        public virtual User? Provider { get; set; }
         [Required]
         public int UserId { get; set; }
-
-        [ForeignKey("UserId")]
-        public User Provider { get; set; }
 
         [Required]
         [MaxLength(255)]

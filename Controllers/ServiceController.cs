@@ -69,16 +69,17 @@ namespace uniPoint_backend.Controllers
                 return NotFound();
             }
 
-            existingService.ServiceName = service.ServiceName;
-            existingService.Price = service.Price;
-            existingService.Description = service.Description;
-            existingService.Address = service.Address;
-            existingService.Duration = service.Duration;
+                existingService.ServiceName = service.ServiceName;
+                existingService.Price = service.Price;
+                existingService.Description = service.Description;
+                existingService.Address = service.Address;
+                existingService.Duration = service.Duration;
 
             _uniPointContext.Entry(existingService).State = EntityState.Modified;
             await _uniPointContext.SaveChangesAsync();
             return Ok(existingService);
         }
+
         // DELETE api/<ServiceController>/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteService(int id)

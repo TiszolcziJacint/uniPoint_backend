@@ -24,6 +24,7 @@ namespace uniPoint_backend.Controllers
             var appointments = await _uniPointContext.Appointments
                                                      .Include(a => a.Booker)
                                                      .Include(a => a.Service)
+                                                     .ThenInclude(s => s.Provider)
                                                      .ToListAsync();
             return Ok(appointments);
         }
@@ -35,6 +36,7 @@ namespace uniPoint_backend.Controllers
             var appointment = await _uniPointContext.Appointments
                                                     .Include(a => a.Booker)
                                                     .Include(a => a.Service)
+                                                    .ThenInclude(s => s.Provider)
                                                     .FirstOrDefaultAsync(a => a.Id == id);
 
             if (appointment == null)

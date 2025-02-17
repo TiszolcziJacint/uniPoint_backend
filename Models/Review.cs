@@ -9,17 +9,15 @@ namespace uniPoint_backend.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int ReviewId { get; set; }
 
+        [ForeignKey("UserId")]
+        public User? Reviewer { get; set; }
         [Required]
         public int UserId { get; set; }
 
-        [ForeignKey("UserId")]
-        public virtual User Reviewer { get; set; }
-
+        [ForeignKey("ServiceId")]
+        public Service? Service { get; set; }
         [Required]
         public int ServiceId { get; set; }
-
-        [ForeignKey("ServiceId")]
-        public Service Service { get; set; }
 
         [Required]
         [Range(1, 5)]
