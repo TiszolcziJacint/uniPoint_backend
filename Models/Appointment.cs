@@ -19,10 +19,10 @@ namespace uniPoint_backend.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
-        [ForeignKey("UserId")]
-        public User? Booker { get; set; }
         [Required]
-        public int UserId { get; set; }
+        public string UserId { get; set; }
+        [ForeignKey("UserId")]
+        public virtual User? Booker { get; set; }
 
         [ForeignKey("ServiceId")]
         public Service? Service { get; set; }

@@ -3,9 +3,12 @@ using Microsoft.EntityFrameworkCore;
 using uniPoint_backend.Models;
 using System.Threading.Tasks;
 using System.Linq;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace uniPoint_backend.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class ReviewController : ControllerBase
@@ -46,6 +49,7 @@ namespace uniPoint_backend.Controllers
         }
 
         // POST api/<ReviewController>
+        [Authorize(Roles = "User,Admin")]
         [HttpPost]
         public async Task<IActionResult> CreateReview(Review review)
         {
@@ -54,12 +58,16 @@ namespace uniPoint_backend.Controllers
                 return BadRequest();
             }
 
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            review.UserId = userId;
+
             _uniPointContext.Reviews.Add(review);
             await _uniPointContext.SaveChangesAsync();
             return CreatedAtAction("GetReview", new { id = review.ReviewId }, review);
         }
 
         // PUT api/<ReviewController>/5
+        [Authorize(Roles = "User,Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateReview(int id, Review review)
         {
@@ -74,13 +82,23 @@ namespace uniPoint_backend.Controllers
                 return NotFound();
             }
 
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userRole = User.FindFirstValue(ClaimTypes.Role);
+
+            if (userRole != "Admin" && existingReview.UserId != userId)
+            {
+                return Forbid();
+            }
+
             existingReview.Score = review.Score;
             existingReview.Description = review.Description;
             _uniPointContext.Entry(existingReview).State = EntityState.Modified;
             await _uniPointContext.SaveChangesAsync();
             return Ok(existingReview);
         }
+
         // DELETE api/<ReviewController>/5
+        [Authorize(Roles = "User,Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteReview(int id)
         {
@@ -88,6 +106,14 @@ namespace uniPoint_backend.Controllers
             if (review == null)
             {
                 return NotFound();
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userRole = User.FindFirstValue(ClaimTypes.Role);
+
+            if (userRole != "Admin" && review.UserId != userId)
+            {
+                return Forbid();
             }
 
             _uniPointContext.Reviews.Remove(review);

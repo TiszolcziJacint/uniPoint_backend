@@ -2,6 +2,9 @@
 using Microsoft.EntityFrameworkCore;
 using uniPoint_backend.Models;
 using uniPoint_backend;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using System.Security.Claims;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -9,28 +12,31 @@ namespace uniPoint_backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class UserController : ControllerBase
     {
-        private readonly uniPointContext _uniPointContext;
+        private readonly UserManager<User> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
 
-        public UserController(uniPointContext uniPointContext)
+        public UserController(UserManager<User> userManager, RoleManager<IdentityRole> roleManager)
         {
-            _uniPointContext = uniPointContext;
+            _userManager = userManager;
+            _roleManager = roleManager;
         }
 
         // GET: api/<UserController>
         [HttpGet]
         public async Task<IActionResult> GetUsers()
         {
-            var users = await _uniPointContext.Users.ToListAsync();
+            var users = await _userManager.Users.ToListAsync();
             return Ok(users);
         }
 
         // GET api/<UserController>/5
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetUser(int id)
+        public async Task<IActionResult> GetUser(string id)
         {
-            var user = await _uniPointContext.Users.FindAsync(id);
+            var user = await _userManager.FindByIdAsync(id);
             if (user == null)
             {
                 return NotFound();
@@ -38,59 +44,64 @@ namespace uniPoint_backend.Controllers
             return Ok(user);
         }
 
-        // POST api/<UserController>
-        [HttpPost]
-        public async Task<IActionResult> CreateUser(User user)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest();
-            }
-
-            _uniPointContext.Users.Add(user);
-            await _uniPointContext.SaveChangesAsync();
-            return CreatedAtAction("GetUser", new { id = user.UserId }, user);
-        }
+        // POST a register-en keresztul
 
         // PUT api/<UserController>/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id, User user)
+        public async Task<IActionResult> UpdateUser(string id, [FromBody] UpdateUserModel model)
         {
-            if (id != user.UserId)
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
             {
-                return BadRequest("Id doesn't match");
+                return NotFound("User not found.");
             }
 
-            var existingUser = await _uniPointContext.Users.FindAsync(id);
-            if (existingUser == null)
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (id != currentUserId)
             {
-                return NotFound();
+                return Forbid();
             }
 
-            existingUser.Name = user.Name;
-            existingUser.Email = user.Email;
-            existingUser.Password = user.Password;
-            existingUser.PhoneNumber = user.PhoneNumber;
-            existingUser.ProfilePictureUrl = user.ProfilePictureUrl;
-            existingUser.Role = user.Role;
-            _uniPointContext.Entry(existingUser).State = EntityState.Modified;
-            await _uniPointContext.SaveChangesAsync();
-            return Ok(existingUser);
+            user.UserName = model.Name;
+            user.Email = model.Email;
+            user.PhoneNumber = model.PhoneNumber;
+            user.ProfilePictureUrl = model.ProfilePictureUrl;
+
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            return Ok(user);
         }
 
         // DELETE api/<UserController>/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUser(int id)
+        public async Task<IActionResult> DeleteUser(string id)
         {
-            var user = await _uniPointContext.Users.FindAsync(id);
+            var user = await _userManager.FindByIdAsync(id);
             if (user == null)
             {
                 return NotFound();
             }
 
-            _uniPointContext.Users.Remove(user);
-            await _uniPointContext.SaveChangesAsync();
-            return Ok();
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (id != currentUserId)
+            {
+                return Forbid();
+            }
+
+
+            var result = await _userManager.DeleteAsync(user);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            return Ok("User deleted successfully.");
         }
     }
 }
